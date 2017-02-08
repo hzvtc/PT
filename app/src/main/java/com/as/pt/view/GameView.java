@@ -1,24 +1,27 @@
 package com.as.pt.view;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Rect;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.ScaleAnimation;
 
 import com.as.pt.R;
-import com.as.pt.activity.MainActivity;
 import com.as.pt.bean.PuzzleCell;
 import com.as.pt.util.DensityUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,6 +47,9 @@ public class GameView extends View {
     private Canvas backCanvas;//界面后台画布
     private int scrrenW;
     private int scrennH;
+
+    private SoundPool soundPool;
+    private HashMap<Integer,Integer> soundIdMap;
     public GameView(Context context) {
         super(context);
         this.mContext=context;
@@ -51,6 +57,25 @@ public class GameView extends View {
         paint.setColor(Color.RED);
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
+
+        ScaleAnimation scaleAnimation = new ScaleAnimation(5,1,3,1);
+        scaleAnimation.setDuration(800);
+        startAnimation(scaleAnimation);
+        initSoundPool();
+    }
+
+    private void initSoundPool() {
+        soundPool = new SoundPool(3, AudioManager.STREAM_MUSIC, 0);
+        soundIdMap = new HashMap<Integer, Integer>();
+        soundIdMap.put(1, soundPool.load(mContext, R.raw.ir_begin, 1));
+    }
+
+    private void play(int sound, int loop) {
+        AudioManager audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+        float currVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        float maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        float volume = currVolume / maxVolume;
+        soundPool.play(soundIdMap.get(sound), volume, volume, 1, loop, 1.0f);
     }
 
     @Override
@@ -60,14 +85,16 @@ public class GameView extends View {
         scrennH = (w > h) ? h : w;
         initGames();
         makePuzzles();
-        drawPuzzle(backCanvas);
+        drawPuzzle(backCanvas, null);
         super.onSizeChanged(w, h, oldw, oldh);
     }
 
-    private void drawPuzzle(Canvas canvas) {
+    private void drawPuzzle(Canvas canvas, PuzzleCell ignoreCell) {
         canvas.drawBitmap(background,0,0,null);
-        canvas.drawBitmap(puzzleImage,null,puzzRect,null);
-        canvas.drawBitmap(puzzleImage,null,thumbRect,null);
+        Paint p = new Paint();
+        p.setAlpha(120);
+        canvas.drawBitmap(puzzleImage,null,puzzRect,p);
+        canvas.drawBitmap(puzzleImage,null,thumbRect,p);
 //        canvas.drawRect(cellRect,paint);
 //        for (PuzzleCell puzzleCell:puzzleCells){
 //            canvas.drawBitmap(puzzleCell.image,cellRect.left,cellRect.top,null);
@@ -75,7 +102,11 @@ public class GameView extends View {
 
         for (int j=puzzleCells.size()-1;j>=0;j--){
             PuzzleCell cell = puzzleCells.get(j);
-            cell.onDraw(canvas);
+            //不绘制被触摸的拼图块
+           if (cell!=ignoreCell){
+               cell.onDraw(canvas);
+           }
+
         }
         canvas.drawRect(puzzRect,paint);
         for (int i=1;i<=2;i++){
@@ -108,6 +139,10 @@ public class GameView extends View {
                 } while (zOrders.contains(order));
                 zOrders.add(order);
                 puzzleCell.zOrder = order;
+                //确定拼图块的贵为区域 并且初始状态为未归位
+                puzzleCell.homeX0 = (int) (j*pw)+DensityUtils.dp2px(mContext,10);
+                puzzleCell.homeY0 = (int)(i*ph)+DensityUtils.dp2px(mContext,20);
+                puzzleCell.isFixed = false;
                 puzzleCells.add(puzzleCell);
             }
 
@@ -155,11 +190,19 @@ public class GameView extends View {
             case MotionEvent.ACTION_DOWN:
                 for (int i=0;i<puzzleCells.size();i++){
                     PuzzleCell cell = puzzleCells.get(i);
+                    if (cell.isFixed){
+                        continue;
+                    }
                     if (cell.isTouch(x,y)){
                         cell.zOrder = getCellMaxZorder()+1;
+
+                        sortPuzzles();
                         touchCell=cell;
                         touchCell.setTouchedPoint(x,y);
-                        sortPuzzles();
+                        //在后台画布上绘制一封干净的界面
+                        drawPuzzle(backCanvas,cell);
+                        //保存被点击的拼图块 记录触摸位置点
+
                         invalidate();
                         return true;
                     }
@@ -179,7 +222,21 @@ public class GameView extends View {
                 }
                 break;
             case MotionEvent.ACTION_UP:
+                if (touchCell!=null){
+                    double ds = Math.sqrt((touchCell.x-touchCell.homeX0)*(touchCell.x-touchCell.homeX0)
+                            +(touchCell.y-touchCell.homeY0)*(touchCell.y-touchCell.homeY0));
+                    if (ds<DensityUtils.dp2px(mContext,10)){
+                        touchCell.x = touchCell.homeX0;
+                        touchCell.y = touchCell.homeY0;
+                        touchCell.isFixed = true;
+                        //播放贵为音效
+                        play(1,0);
+                    }
+                }
                 touchCell=null;
+                //解决MotionEvent.ACTION_UP比MotionEvent.ACTION_DOWN invalidate 先执行的问题
+                drawPuzzle(backCanvas,null);
+                invalidate();
                 break;
         }
         return super.onTouchEvent(event);

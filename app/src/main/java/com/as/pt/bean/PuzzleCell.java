@@ -16,7 +16,9 @@ public class PuzzleCell {
     public int zOrder;//决定拼图块的上下堆叠次序
     public Point touchedPoint;
 
-
+    public int homeX0;
+    public int homeY0;
+    public boolean isFixed;
 
     public void setTouchedPoint(int x,int y) {
         if (touchedPoint==null){
