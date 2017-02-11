@@ -72,6 +72,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private long soundPoolTime;
 
     private int fixedNum;
+
+    private boolean isTouchDownOrUp;
+
+    private Thread gameUIShowThread;
     public GameView(Context context) {
         super(context);
         this.mContext=context;
@@ -94,6 +98,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         requestFocus();
 
         ball.image = BitmapFactory.decodeResource(context.getResources(),R.mipmap.ball);
+
+        isTouchDownOrUp = false;
     }
 
     private void update(){
@@ -124,6 +130,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 //                    Log.e("GameRender",""+startTime);
                     startTime = System.currentTimeMillis();
                     canvas = holder.lockCanvas();
+//                    //解决按下和弹起拼图块一瞬间一边画东西一边显示的问题
+//                    // 这句话必须放在canvas = holder.lockCanvas();之后
+                    if (isTouchDownOrUp){
+                        continue;
+                    }
                     if (canvas!=null){
                         //重后台缓存中绘制当前除移动拼图块的图像
                         canvas.drawBitmap(backDrawing, 0, 0, null);
@@ -167,9 +178,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-        Thread thread = new Thread(new GameRender());
+        gameUIShowThread = new Thread(new GameRender());
         finished = false;
-        thread.start();
+        gameUIShowThread.start();
     }
 
     @Override
@@ -296,6 +307,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         for (int j=1;j<=3;j++){
             canvas.drawLine((int)(puzzRect.left+pw*j),puzzRect.top,(int)(puzzRect.left+pw*j),puzzRect.bottom,paint);
         }
+
+        isTouchDownOrUp = false;
     }
 
     private void makePuzzles() {
@@ -314,7 +327,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 puzzleCell.height = (int)ph;
                 puzzleCell.x = cellRect.left+(int) ((Math.random()*cellRect.width()));
                 puzzleCell.y = cellRect.top+(int) ((Math.random()*cellRect.height()));
-
+//                Collections.shuffle();
                 int order;
                 do {
                     order = (int) (Math.random()*12);
@@ -379,6 +392,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                         continue;
                     }
                     if (cell.isTouch(x,y)){
+                        isTouchDownOrUp = true;
                         cell.zOrder = getCellMaxZorder()+1;
 
                         sortPuzzles();
@@ -407,6 +421,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 }
                 break;
             case MotionEvent.ACTION_UP:
+                isTouchDownOrUp = true;
                 if (touchCell!=null){
                     double ds = Math.sqrt((touchCell.x-touchCell.homeX0)*(touchCell.x-touchCell.homeX0)
                             +(touchCell.y-touchCell.homeY0)*(touchCell.y-touchCell.homeY0));
@@ -414,6 +429,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                         touchCell.x = touchCell.homeX0;
                         touchCell.y = touchCell.homeY0;
                         touchCell.isFixed = true;
+                        //解决拼图块将要归位时另一拼图块在归位的拼图块区域内 导致部分覆盖或者全部覆盖
                         touchCell.zOrder=-1;
                         sortPuzzles();
                         fixedNum++;
