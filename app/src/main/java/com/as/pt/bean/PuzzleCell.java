@@ -9,6 +9,7 @@ import android.graphics.Point;
  */
 public class PuzzleCell {
     public Bitmap image;
+    public int imgId;
     public int x;//拼图块在屏幕左上角的位置
     public int y;
     public int width;

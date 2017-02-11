@@ -16,6 +16,7 @@ import android.view.animation.ScaleAnimation;
 
 import com.as.pt.R;
 import com.as.pt.bean.PuzzleCell;
+import com.as.pt.bean.PuzzleCellState;
 import com.as.pt.util.DensityUtils;
 
 import java.util.ArrayList;
@@ -40,7 +41,9 @@ public class GameView extends View {
     private Rect thumbRect;
     private Rect cellRect;//拼图区域 缩略图区域 打乱拼图区
     private Context mContext;
-    private List<PuzzleCell> puzzleCells = new ArrayList<>();
+    public List<PuzzleCell> puzzleCells = new ArrayList<>();
+    //游戏精度保存的拼图块状态动态数组
+    public List<PuzzleCellState> puzzleCellStates = new ArrayList<>();
     //触摸的拼图
     private PuzzleCell touchCell;
     private Bitmap backDrawing;//界面后台背景
@@ -84,9 +87,39 @@ public class GameView extends View {
         scrrenW = (w > h) ? w : h;
         scrennH = (w > h) ? h : w;
         initGames();
-        makePuzzles();
+        if (puzzleCellStates.size()>0){
+            loadPuzzleCell();
+        }
+        else {
+            makePuzzles();
+        }
+
         drawPuzzle(backCanvas, null);
         super.onSizeChanged(w, h, oldw, oldh);
+    }
+
+    private void loadPuzzleCell() {
+        int col,row;
+        Rect puzzleRect;
+        for (PuzzleCellState pcs:puzzleCellStates){
+            row = pcs.ImgId/4;
+             col= pcs.ImgId%4;
+            puzzleRect = new Rect((int) (col*pw),(int)(row*ph),(int) ((col+1)*pw),(int) ((row+1)*ph));
+            PuzzleCell puzzleCell = new PuzzleCell();
+            puzzleCell.image = Bitmap.createBitmap(puzzleImage,puzzleRect.left,puzzleRect.top,puzzleRect.width(),puzzleRect.height());
+            puzzleCell.imgId = pcs.ImgId;
+            puzzleCell.width = (int)pw;
+            puzzleCell.height = (int)ph;
+            puzzleCell.x = pcs.posX;
+            puzzleCell.y = pcs.posY;
+            puzzleCell.zOrder = pcs.zOrder;
+            puzzleCell.homeX0 = puzzleRect.left+DensityUtils.dp2px(mContext,10);
+            puzzleCell.homeY0 = puzzleRect.top+DensityUtils.dp2px(mContext,20);
+            puzzleCell.isFixed = pcs.isFixed;
+            puzzleCells.add(puzzleCell);
+        }
+
+        sortPuzzles();
     }
 
     private void drawPuzzle(Canvas canvas, PuzzleCell ignoreCell) {
@@ -126,6 +159,7 @@ public class GameView extends View {
         for (int i=0;i<3;i++){
             for (int j=0;j<4;j++){
                 puzzleCell = new PuzzleCell();
+                puzzleCell.imgId = i*4+j;
                 puzzleRect = new Rect((int) (j*pw),(int)(i*ph),(int) ((j+1)*pw),(int) ((i+1)*ph));
                 puzzleCell.image = Bitmap.createBitmap(puzzleImage,puzzleRect.left,puzzleRect.top,puzzleRect.width(),puzzleRect.height());
                 puzzleCell.width = (int)pw;
