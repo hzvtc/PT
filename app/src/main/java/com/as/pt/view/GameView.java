@@ -9,13 +9,16 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.media.SoundPool;
+import android.net.Uri;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.animation.ScaleAnimation;
+import android.widget.Toast;
 
 import com.as.pt.R;
 import com.as.pt.bean.Ball;
@@ -24,6 +27,8 @@ import com.as.pt.bean.PuzzleCellState;
 import com.as.pt.util.DensityUtils;
 import com.as.pt.util.PalLog;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -63,6 +68,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private boolean finished;
 
     private Ball ball = new Ball();
+    //音频的时间
+    private long soundPoolTime;
+
+    private int fixedNum;
     public GameView(Context context) {
         super(context);
         this.mContext=context;
@@ -177,6 +186,38 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         soundPool = new SoundPool(3, AudioManager.STREAM_MUSIC, 0);
         soundIdMap = new HashMap<Integer, Integer>();
         soundIdMap.put(1, soundPool.load(mContext, R.raw.ir_begin, 1));
+//        soundPoolTime = getSoundTime();
+    }
+
+    private int getSoundTime(){
+        Field[] fields = R.raw.class.getDeclaredFields();
+        int rawId;
+        String rawName;
+        int duration = 0;
+        MediaPlayer mediaPlayer = null;
+        try {
+            rawId = fields[0].getInt(R.raw.class);
+            rawName = fields[0].getName();
+            Log.i("getSoundTime", "-----------rawId="+rawId+"----------");
+            Uri uri = Uri.parse("android.resource://"+getContext().getPackageName()+"/"+ rawId);
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setDataSource(getContext(), uri);
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mediaPlayer.prepare();
+            duration = mediaPlayer.getDuration();
+            Log.i("getSoundTime", "-----------duration="+duration+"----------");
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        finally {
+            if (mediaPlayer!=null){
+                mediaPlayer = null;
+                mediaPlayer.release();
+            }
+        }
+        return duration;
     }
 
     private void play(int sound, int loop) {
@@ -258,6 +299,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     private void makePuzzles() {
+        fixedNum = 0;
         //将平涂分割成3*4的拼图 保存到puzzleCells
         Rect puzzleRect;
         PuzzleCell puzzleCell;
@@ -372,8 +414,15 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                         touchCell.x = touchCell.homeX0;
                         touchCell.y = touchCell.homeY0;
                         touchCell.isFixed = true;
+                        touchCell.zOrder=-1;
+                        sortPuzzles();
+                        fixedNum++;
+                        //停止背景音乐播放
                         //播放贵为音效
                         play(1,0);
+                        if (fixedNum==puzzleCells.size()){
+                            Toast.makeText(mContext,"拼图全部归位",Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
                 touchCell=null;
