@@ -10,6 +10,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.media.AudioManager;
 import android.media.SoundPool;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -17,9 +18,11 @@ import android.view.View;
 import android.view.animation.ScaleAnimation;
 
 import com.as.pt.R;
+import com.as.pt.bean.Ball;
 import com.as.pt.bean.PuzzleCell;
 import com.as.pt.bean.PuzzleCellState;
 import com.as.pt.util.DensityUtils;
+import com.as.pt.util.PalLog;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,6 +61,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private SurfaceHolder holder;
     private boolean finished;
+
+    private Ball ball = new Ball();
     public GameView(Context context) {
         super(context);
         this.mContext=context;
@@ -78,6 +83,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         setFocusable(true);
         setFocusableInTouchMode(true);
         requestFocus();
+
+        ball.image = BitmapFactory.decodeResource(context.getResources(),R.mipmap.ball);
+    }
+
+    private void update(){
+        int x = (int)(6*Math.random());
+        int y = (int)(4*Math.random());
+
+        ball.x0 = ball.x0+ball.direction*x;
+        ball.y0 = ball.y0+ball.direction*y;
+
+        if (ball.x0>scrrenW||ball.y0>scrennH){
+            ball.direction = -1;
+        }
+
+        if (ball.x0<0||ball.y0<0){
+            ball.direction = 1;
+        }
     }
 
     private class GameRender implements Runnable{
@@ -85,9 +108,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         public void run() {
             Canvas canvas=null;
             //绘制界面中的线程循环
+            long startTime = 0,endTime = 0,frame;
             while (!finished){
                 //锁定画布 即当前的绘图对象
                 try {
+//                    Log.e("GameRender",""+startTime);
+                    startTime = System.currentTimeMillis();
                     canvas = holder.lockCanvas();
                     if (canvas!=null){
                         //重后台缓存中绘制当前除移动拼图块的图像
@@ -95,7 +121,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                         if (touchCell != null) {
                             touchCell.onDraw(canvas);
                         }
+
+                        update();
+//                        canvas.drawBitmap(ball.image,ball.x0,ball.y0,null);
                     }
+
+                    endTime = System.currentTimeMillis();
+                    frame = 1000/(endTime-startTime);
+                    canvas.drawText("FPS:"+frame,scrrenW/2,scrennH-10,paint);
+
+
                 }
                 catch (Exception e){
 
@@ -103,6 +138,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 finally {
                     if (canvas!=null){
                         holder.unlockCanvasAndPost(canvas);
+                    }
+                    //考虑到刷新UI的时间
+                    endTime = System.currentTimeMillis();
+                    //让线程每一帧刷新的事件都在17秒 即频率达到60
+                    if (endTime-startTime<17){
+                        long sleepTime = 17-(endTime-startTime);
+                        try {
+                            Thread.sleep(sleepTime);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
 
