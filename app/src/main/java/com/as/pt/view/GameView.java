@@ -11,6 +11,8 @@ import android.graphics.Rect;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.animation.ScaleAnimation;
 
@@ -30,7 +32,7 @@ import java.util.Set;
 /**
  * Created by FJQ on 2017/2/7.
  */
-public class GameView extends View {
+public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private Bitmap background;
     private Bitmap puzzleImage; //背景图片 拼图
@@ -53,6 +55,9 @@ public class GameView extends View {
 
     private SoundPool soundPool;
     private HashMap<Integer,Integer> soundIdMap;
+
+    private SurfaceHolder holder;
+    private boolean finished;
     public GameView(Context context) {
         super(context);
         this.mContext=context;
@@ -60,11 +65,66 @@ public class GameView extends View {
         paint.setColor(Color.RED);
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
-
+        //游戏启动动画
         ScaleAnimation scaleAnimation = new ScaleAnimation(5,1,3,1);
         scaleAnimation.setDuration(800);
         startAnimation(scaleAnimation);
+        //拼图归位音效
         initSoundPool();
+
+        holder = this.getHolder();
+        holder.addCallback(this);
+        //在触摸模式下得到焦点
+        setFocusable(true);
+        setFocusableInTouchMode(true);
+        requestFocus();
+    }
+
+    private class GameRender implements Runnable{
+        @Override
+        public void run() {
+            Canvas canvas=null;
+            //绘制界面中的线程循环
+            while (!finished){
+                //锁定画布 即当前的绘图对象
+                try {
+                    canvas = holder.lockCanvas();
+                    if (canvas!=null){
+                        //重后台缓存中绘制当前除移动拼图块的图像
+                        canvas.drawBitmap(backDrawing, 0, 0, null);
+                        if (touchCell != null) {
+                            touchCell.onDraw(canvas);
+                        }
+                    }
+                }
+                catch (Exception e){
+
+                }
+                finally {
+                    if (canvas!=null){
+                        holder.unlockCanvasAndPost(canvas);
+                    }
+                }
+
+            }
+        }
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+        Thread thread = new Thread(new GameRender());
+        finished = false;
+        thread.start();
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder surfaceHolder) {
+
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+        finished = true;
     }
 
     private void initSoundPool() {
@@ -185,6 +245,9 @@ public class GameView extends View {
         sortPuzzles();
     }
 
+    /**
+     * Canvas+Bitmap加载游戏背景图片 绘制拼图区域 缩略图区域 打乱拼图区域
+     */
     public void initGames(){
         Bitmap bg = BitmapFactory.decodeResource(getResources(), R.mipmap.game_bg);
         background = Bitmap.createScaledBitmap(bg,scrrenW,scrennH,false);
@@ -237,7 +300,7 @@ public class GameView extends View {
                         drawPuzzle(backCanvas,cell);
                         //保存被点击的拼图块 记录触摸位置点
 
-                        invalidate();
+//                        invalidate();
                         return true;
                     }
                 }
@@ -245,13 +308,13 @@ public class GameView extends View {
             case MotionEvent.ACTION_MOVE:
                 if (touchCell!=null){
                     //拼图原区域
-                    Rect rect1 = new Rect(touchCell.x,touchCell.y,touchCell.x+touchCell.width,touchCell.y+touchCell.height);
+//                    Rect rect1 = new Rect(touchCell.x,touchCell.y,touchCell.x+touchCell.width,touchCell.y+touchCell.height);
                     touchCell.moveTo(x,y);
                     //拼图移动后的区域
-                    Rect rect2 = new Rect(touchCell.x,touchCell.y,touchCell.x+touchCell.width,touchCell.y+touchCell.height);
+//                    Rect rect2 = new Rect(touchCell.x,touchCell.y,touchCell.x+touchCell.width,touchCell.y+touchCell.height);
                     //形成局部重绘区
-                    rect2.union(rect1);
-                    invalidate(rect2);
+//                    rect2.union(rect1);
+//                    invalidate(rect2);
                     return true;
                 }
                 break;
@@ -270,7 +333,7 @@ public class GameView extends View {
                 touchCell=null;
                 //解决MotionEvent.ACTION_UP比MotionEvent.ACTION_DOWN invalidate 先执行的问题
                 drawPuzzle(backCanvas,null);
-                invalidate();
+//                invalidate();
                 break;
         }
         return super.onTouchEvent(event);
@@ -297,15 +360,15 @@ public class GameView extends View {
         return maxZorder;
     }
 
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        //重后台缓存中绘制当前除移动拼图块的图像
-        canvas.drawBitmap(backDrawing,0,0,null);
-        if (touchCell!=null){
-            touchCell.onDraw(canvas);
-        }
-    }
+//    @Override
+//    protected void onDraw(Canvas canvas) {
+//        super.onDraw(canvas);
+//        //重后台缓存中绘制当前除移动拼图块的图像
+//        canvas.drawBitmap(backDrawing,0,0,null);
+//        if (touchCell!=null){
+//            touchCell.onDraw(canvas);
+//        }
+//    }
 
 
 }

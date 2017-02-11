@@ -12,6 +12,7 @@ import com.as.pt.view.GameView;
 
 /**
  * 自定义View的实现
+ * Canvas绘图 Bitmap对象 像素单位转换 触屏事件处理 音效播放 SharedPreferences数据保存
  */
 public class MainActivity extends Activity {
     private GameView gameView;
@@ -24,9 +25,11 @@ public class MainActivity extends Activity {
         gameView = new GameView(this);
         loadGameProgress();
         setContentView(gameView);
-        // 加载assets下的音乐文件 无限循环播放音乐
-        BgMusicManager.getInstance(this).playBackgroundMusic("music/bg_music.mp3",true);
+
+
     }
+
+
 
 
 
@@ -65,6 +68,13 @@ public class MainActivity extends Activity {
         if (BgMusicManager.getInstance(this).isBackgroundMusicPlaying()){
             BgMusicManager.getInstance(this).end();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 加载assets下的音乐文件 无限循环播放音乐
+        BgMusicManager.getInstance(this).playBackgroundMusic("music/bg_music.mp3",true);
     }
 
     private void saveGameProcess() {
