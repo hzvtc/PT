@@ -244,27 +244,28 @@ public class PalLog {
     //检查日志压缩文件是否存在 不存在重新初始化配置
     public static void checkStorageLog() {
 //        Log.e(TAG, "" + generate);
-        if (isConfig){
-                if (generate==0){
-                    File targetLogFile = new File(path + File.separator + getCurrentDate());
-//                    Log.e(TAG, "" + targetLogFile.exists());
-                    if (!targetLogFile.exists()) {
-                        generate++;
-                        init(context);
-                    }
-                }
-                else {
-                    File targetLogFile = new File(path + File.separator + getCurrentDate()+"."+generate);
-//                    Log.e(TAG, "" + targetLogFile.exists());
-                    if (!targetLogFile.exists()) {
-                        generate++;
-                        init(context);
-                    }
-                }
-            }
-
-
-        }
+//        if (isConfig){
+//                if (generate==0){
+//                    File targetLogFile = new File(path + File.separator + getCurrentDate());
+////                    Log.e(TAG, "" + targetLogFile.exists());
+//                    if (!targetLogFile.exists()) {
+//                        generate++;
+//                        init(context);
+//                    }
+//                }
+//                else {
+//                    File targetLogFile = new File(path + File.separator + getCurrentDate()+"."+generate);
+////                    Log.e(TAG, "" + targetLogFile.exists());
+//                    if (!targetLogFile.exists()) {
+//                        generate++;
+//                        init(context);
+//                    }
+//                }
+//            }
+//
+//
+//        }
+    }
 
     }
 

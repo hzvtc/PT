@@ -1,16 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".activity.MainActivity">
+    android:background="@mipmap/start_bg">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!" />
+    <LinearLayout
+        android:id="@+id/startGameLv"
+        style="@style/GameLvStyle"
+        android:layout_marginTop="160dp">
+
+        <TextView
+            style="@style/GameTvStyle"
+            android:text="开始游戏"
+            android:id="@+id/start" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/settingLv"
+        style="@style/GameLvStyle"
+        android:layout_below="@+id/startGameLv"
+        android:layout_marginTop="5dp">
+
+        <TextView
+            style="@style/GameTvStyle"
+            android:text="设置"
+            android:id="@+id/setting" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/exitGameLv"
+        style="@style/GameLvStyle"
+        android:layout_below="@+id/settingLv"
+        android:layout_marginTop="5dp">
+
+        <TextView
+            style="@style/GameTvStyle"
+            android:text="退出游戏"
+            android:id="@+id/exit" />
+    </LinearLayout>
 </RelativeLayout>

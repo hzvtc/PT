@@ -41,7 +41,7 @@ import java.util.Set;
  * Created by FJQ on 2017/2/7.
  */
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
-
+    private static final String TAG="GameView";
     private Bitmap background;
     private Bitmap puzzleImage; //背景图片 拼图
     private Paint paint;
@@ -78,6 +78,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private Thread gameUIShowThread;
     public GameView(Context context) {
         super(context);
+        Log.d(TAG,"GameView");
         this.mContext=context;
         paint = new Paint();
         paint.setColor(Color.RED);
@@ -117,6 +118,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             ball.direction = 1;
         }
     }
+
 
     private class GameRender implements Runnable{
         @Override
@@ -178,6 +180,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+        Log.d(TAG,"surfaceChanged");
         gameUIShowThread = new Thread(new GameRender());
         finished = false;
         gameUIShowThread.start();
@@ -241,6 +244,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        Log.d(TAG,"onSizeChanged");
         //计算屏幕宽度
         scrrenW = (w > h) ? w : h;
         scrennH = (w > h) ? h : w;
