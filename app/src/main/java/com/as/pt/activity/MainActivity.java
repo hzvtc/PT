@@ -1,12 +1,15 @@
 package com.as.pt.activity;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
 
 import com.as.pt.R;
+import com.as.pt.util.IntentManager;
+import com.as.pt.util.LocalActivityManager;
 import com.as.pt.view.GameView;
 
 public class MainActivity extends Activity {
@@ -23,7 +26,7 @@ public class MainActivity extends Activity {
         startGameLv.setOnClickListener(new onGameControlListener());
         settingLv.setOnClickListener(new onGameControlListener());
         endGameLv.setOnClickListener(new onGameControlListener());
-
+        LocalActivityManager.getInstance(MainActivity.this).pushActivity(this);
     }
 
     private class onGameControlListener implements View.OnClickListener{
@@ -31,17 +34,17 @@ public class MainActivity extends Activity {
         public void onClick(View view) {
             switch (view.getId()){
                 case R.id.startGameLv:
-                    Intent intent = new Intent();
-                    intent.setClass(MainActivity.this, GameActivity.class);
-                    startActivity(intent);
-                    //设置切换动画，从右边进入，左边退出
-                    overridePendingTransition(R.anim.in_from_right, R.anim.out_to_left);
+                    IntentManager.getInstance(MainActivity.this).startAnotherActivity(GameActivity.class,null);
                     break;
                 case R.id.settingLv:
+                    IntentManager.getInstance(MainActivity.this).startAnotherActivity(SettingActivity.class,null);
                     break;
                 case R.id.exitGameLv:
+                    LocalActivityManager.getInstance(MainActivity.this).clearActivity();
                     break;
             }
         }
     }
+
+
 }

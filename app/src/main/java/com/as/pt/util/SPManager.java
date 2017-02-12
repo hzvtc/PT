@@ -7,18 +7,31 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-public class SPUtils
+public class SPManager
 {
-	public SPUtils()
-	{
-		/* cannot be instantiated */
-		throw new UnsupportedOperationException("cannot be instantiated");
+
+	private static SPManager mInstance;
+	private Context context;
+
+	private SPManager(Context context) {
+		this.context = context;
+	}
+
+	public static SPManager getInstance(Context context) {
+		if (mInstance == null) {
+			mInstance = new SPManager(context.getApplicationContext());
+		}
+		return mInstance;
 	}
 
 	/**
 	 * 保存在手机里面的文件名
 	 */
-	public static final String FILE_NAME = "pt_save_data";
+	private String fileName = "share_data";
+
+	public void setFileName(String fileName) {
+		this.fileName = fileName;
+	}
 
 	/**
 	 * 保存数据的方法，我们需要拿到保存数据的具体类型，然后根据类型调用不同的保存方法
@@ -27,10 +40,10 @@ public class SPUtils
 	 * @param key
 	 * @param object
 	 */
-	public static void put(Context context, String key, Object object)
+	public  void put( String key, Object object)
 	{
 
-		SharedPreferences sp = context.getSharedPreferences(FILE_NAME,
+		SharedPreferences sp = context.getSharedPreferences(fileName,
 				Context.MODE_PRIVATE);
 		SharedPreferences.Editor editor = sp.edit();
 
@@ -65,9 +78,9 @@ public class SPUtils
 	 * @param defaultObject
 	 * @return
 	 */
-	public static Object get(Context context, String key, Object defaultObject)
+	public  Object get( String key, Object defaultObject)
 	{
-		SharedPreferences sp = context.getSharedPreferences(FILE_NAME,
+		SharedPreferences sp = context.getSharedPreferences(fileName,
 				Context.MODE_PRIVATE);
 
 		if (defaultObject instanceof String)
@@ -96,9 +109,9 @@ public class SPUtils
 	 * @param context
 	 * @param key
 	 */
-	public static void remove(Context context, String key)
+	public  void remove( String key)
 	{
-		SharedPreferences sp = context.getSharedPreferences(FILE_NAME,
+		SharedPreferences sp = context.getSharedPreferences(fileName,
 				Context.MODE_PRIVATE);
 		SharedPreferences.Editor editor = sp.edit();
 		editor.remove(key);
@@ -110,9 +123,9 @@ public class SPUtils
 	 * 
 	 * @param context
 	 */
-	public static void clear(Context context)
+	public  void clear(Context context)
 	{
-		SharedPreferences sp = context.getSharedPreferences(FILE_NAME,
+		SharedPreferences sp = context.getSharedPreferences(fileName,
 				Context.MODE_PRIVATE);
 		SharedPreferences.Editor editor = sp.edit();
 		editor.clear();
@@ -126,9 +139,9 @@ public class SPUtils
 	 * @param key
 	 * @return
 	 */
-	public static boolean contains(Context context, String key)
+	public  boolean contains(String key)
 	{
-		SharedPreferences sp = context.getSharedPreferences(FILE_NAME,
+		SharedPreferences sp = context.getSharedPreferences(fileName,
 				Context.MODE_PRIVATE);
 		return sp.contains(key);
 	}
@@ -139,9 +152,9 @@ public class SPUtils
 	 * @param context
 	 * @return
 	 */
-	public static Map<String, ?> getAll(Context context)
+	public  Map<String, ?> getAll(Context context)
 	{
-		SharedPreferences sp = context.getSharedPreferences(FILE_NAME,
+		SharedPreferences sp = context.getSharedPreferences(fileName,
 				Context.MODE_PRIVATE);
 		return sp.getAll();
 	}
@@ -152,7 +165,7 @@ public class SPUtils
 	 * @author zhy
 	 * 
 	 */
-	private static class SharedPreferencesCompat
+	private  static class SharedPreferencesCompat
 	{
 		private static final Method sApplyMethod = findApplyMethod();
 
@@ -162,7 +175,7 @@ public class SPUtils
 		 * @return
 		 */
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		private static Method findApplyMethod()
+		private  static Method findApplyMethod()
 		{
 			try
 			{
@@ -180,11 +193,11 @@ public class SPUtils
 		 * 
 		 * @param editor
 		 */
-		public static void apply(SharedPreferences.Editor editor)
+		public  static void apply(SharedPreferences.Editor editor)
 		{
 			try
-			{if (sApplyMethod != null)
-
+			{
+				if (sApplyMethod != null)
 				{
 					sApplyMethod.invoke(editor);
 					return;

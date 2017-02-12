@@ -2,13 +2,14 @@ package com.as.pt.activity;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.widget.LinearLayout;
 
 import com.as.pt.bean.PuzzleCell;
 import com.as.pt.bean.PuzzleCellState;
+import com.as.pt.config.CommonVar;
+import com.as.pt.config.SettingVar;
 import com.as.pt.util.BgMusicManager;
 import com.as.pt.util.PalLog;
-import com.as.pt.util.SPUtils;
+import com.as.pt.util.SPManager;
 import com.as.pt.view.GameView;
 
 /**
@@ -38,7 +39,8 @@ public class GameActivity extends Activity {
     private void loadGameProgress() {
         PalLog.d(TAG,"loadGameProgress");
         gameView.puzzleCellStates.clear();
-        String progress = SPUtils.get(this,"PROGRESS","").toString();
+        SPManager.getInstance(this).setFileName(CommonVar.FILE_NAME);
+        String progress = SPManager.getInstance(this).get("PROGRESS","").toString();
         if (!progress.equals("")){
             String[] states = progress.split("[#]");
             for (String state:states){
@@ -59,24 +61,33 @@ public class GameActivity extends Activity {
     protected void onPause() {
         super.onPause();
         saveGameProcess();
-        if (BgMusicManager.getInstance(this).isBackgroundMusicPlaying()){
-            BgMusicManager.getInstance(this).pauseBackgroundMusic();
+        if (SettingVar.isOpenMusic){
+            if (BgMusicManager.getInstance(this).isBackgroundMusicPlaying()){
+                BgMusicManager.getInstance(this).pauseBackgroundMusic();
+            }
         }
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (BgMusicManager.getInstance(this).isBackgroundMusicPlaying()){
-            BgMusicManager.getInstance(this).end();
+        if (SettingVar.isOpenMusic){
+            if (BgMusicManager.getInstance(this).isBackgroundMusicPlaying()){
+                BgMusicManager.getInstance(this).end();
+            }
         }
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         // 加载assets下的音乐文件 无限循环播放音乐
-        BgMusicManager.getInstance(this).playBackgroundMusic("music/bg_music.mp3",true);
+        if (SettingVar.isOpenMusic){
+            BgMusicManager.getInstance(this).playBackgroundMusic("music/bg_music.mp3",true);
+        }
+
     }
 
     private void saveGameProcess() {
@@ -85,7 +96,7 @@ public class GameActivity extends Activity {
             String s = String.format("%d|%d|%d|%d|%s",cell.imgId,cell.x,cell.y,cell.zOrder,Boolean.toString(cell.isFixed));
             process=process+s+"#";
         }
-
-        SPUtils.put(this,"PROGRESS",process);
+        SPManager.getInstance(this).setFileName(CommonVar.FILE_NAME);
+        SPManager.getInstance(this).put("PROGRESS",process);
     }
 }
